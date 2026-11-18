@@ -1,0 +1,74 @@
+# Planner -> Jira sync configuration.
+# Secrets (client secret, Jira token, Anthropic key) never go here; they come
+# from environment variables / GitHub Actions secrets. See README.md.
+
+planner:
+  tenant_id: 7b7466bb-fe1d-47a0-b943-8ded565c8e54
+  plan_id: t7qJKoH_E0GpwoU1bTdao2QAH_vX
+  # Only look at tasks created in the last N days. Keeps the first run from
+  # back-filling the whole plan. Set to 0 to look at everything.
+  lookback_days: 14
+  # Skip tasks someone has already marked complete in Planner.
+  skip_completed: true
+
+jira:
+  base_url: https://jira.biogen.com
+  # "cloud" (email + API token) or "datacenter" (personal access token).
+  deployment: cloud
+  project_key: ITCE
+  issue_type: Task
+  # Every created issue gets these labels, plus "mc-<MC ID>" used for dedup.
+  labels: [m365-message-center]
+
+relevance:
+  # "rules" = keyword rules only. "rules+llm" = rules first, Claude decides the
+  # items the rules can't (needs ANTHROPIC_API_KEY).
+  mode: rules
+  llm_model: claude-opus-5-5
+  # Any of these in the title, bucket, Planner labels or body => relevant.
+  include:
+    - Intune
+    - Endpoint Manager
+    - Autopilot
+    - Windows 11
+    - Windows 10
+    - Windows Update
+    - Windows Autopatch
+    - Windows 365
+    - Cloud PC
+    - Microsoft 365 Apps
+    - Microsoft 365 Copilot app
+    - Office app
+    - Outlook for Windows
+    - new Outlook
+    - Outlook for Mac
+    - Teams client
+    - Teams app
+    - Teams Rooms
+    - Microsoft Edge
+    - OneDrive sync
+    - Defender for Endpoint
+    - BitLocker
+    - macOS
+    - iOS
+    - Android
+    - Company Portal
+    - Conditional Access
+  # Any of these and no include match => not relevant, no LLM call.
+  exclude:
+    - Exchange Online PowerShell
+    - SharePoint Online site
+    - Viva Engage
+    - Viva Glint
+    - Dynamics 365
+    - Power BI
+    - Microsoft Purview eDiscovery
+  # What client engineering cares about, used in the LLM prompt.
+  team_description: >
+    Client Engineering owns the end-user device estate: Windows and macOS
+    endpoints, mobile devices, Intune/Endpoint Manager policies and app
+    deployment, Autopilot, Windows Update and servicing, Microsoft 365 Apps
+    (Office) deployment and update channels, Teams/Outlook/OneDrive/Edge client
+    behaviour and configuration, and endpoint security baselines. Server-side
+    tenant admin changes (Exchange, SharePoint, Purview, Power Platform) are
+    out of scope unless they require a client-side change, policy or package.

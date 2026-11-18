@@ -1,0 +1,41 @@
+name: Planner to Jira sync
+
+on:
+  schedule:
+    - cron: "0 6 * * 1-5"   # 06:00 UTC on weekdays
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: "Create issues in Jira (unchecked = dry run)"
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+concurrency:
+  group: planner-jira-sync
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+          cache: pip
+      - run: pip install -r requirements.txt pytest
+      - run: python -m pytest -q
+      - name: Sync
+        env:
+          AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          AZURE_CLIENT_SECRET: ${{ secrets.AZURE_CLIENT_SECRET }}
+          JIRA_EMAIL: ${{ secrets.JIRA_EMAIL }}
+          JIRA_API_TOKEN: ${{ secrets.JIRA_API_TOKEN }}
+          ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+          # Scheduled runs follow the SYNC_APPLY repository variable, so the
+          # schedule stays a dry run until you set it to "true".
+          DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.apply) || (github.event_name == 'schedule' && vars.SYNC_APPLY == 'true') && 'false' || 'true' }}
+        run: python -m sync.main --config config.yaml
