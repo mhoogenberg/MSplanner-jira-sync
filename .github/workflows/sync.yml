@@ -37,5 +37,5 @@ jobs:
           ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
           # Scheduled runs follow the SYNC_APPLY repository variable, so the
           # schedule stays a dry run until you set it to "true".
-          DRY_RUN: ${{ (github.event_name == 'workflow_dispatch' && inputs.apply) || (github.event_name == 'schedule' && vars.SYNC_APPLY == 'true') && 'false' || 'true' }}
+          DRY_RUN: ${{ ((github.event_name == 'workflow_dispatch' && inputs.apply) || (github.event_name == 'schedule' && vars.SYNC_APPLY == 'true')) && 'false' || 'true' }}
         run: python -m sync.main --config config.yaml
